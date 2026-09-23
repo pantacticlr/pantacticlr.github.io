@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<title>PanTact: Teaching Whole-Body Dexterity with a Wearable Contact Interface</title>
+<meta name="description" content="PanTact: Teaching Whole-Body Dexterity with a Wearable Contact Interface.">
+<style>
+  :root{
+    --maxw: 1000px;
+    --ink: #1c2430;
+    --muted: #5c6675;
+    --accent: #d9642b;
+    --accent-soft: #fdf1ea;
+    --line: #e6e8ec;
+    --bg: #ffffff;
+    --card: #f7f8fa;
+
+    /* Unified type scale */
+    --fs-h1: 2.1rem;
+    --fs-h2: 1.5rem;
+    --fs-h3: 1.18rem;
+    --fs-lead: 1.05rem;
+    --fs-text: 1rem;      /* all reading text: abstract, subs, captions, lists */
+    --fs-ui: .95rem;      /* badges, nav, footer */
+    --fs-small: .8rem;    /* pills, footnotes, buttons */
+    --fs-code: .85rem;
+
+    --radius: 12px;
+    --gap: 26px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;font-size:16px;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,"Noto Sans",sans-serif;
+    color:var(--ink);
+    background:var(--bg);
+    line-height:1.65;
+    font-size:var(--fs-text);
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent);text-decoration:none;transition:color .15s ease;}
+  a:hover{text-decoration:underline;}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px;}
+
+  /* Shared reading text — one size, one color across the page */
+  .section-sub,.abstract p,p.body,figcaption,.caption,.keypts{
+    font-size:var(--fs-text);
+    color:var(--muted);
+    line-height:1.62;
+  }
+  .section-sub b,.abstract p b,p.body b,figcaption b,.caption b,.keypts b{
+    color:var(--ink);font-weight:680;
+  }
+
+  /* Header — full-screen video hero */
+  header.hero{
+    position:relative;
+    aspect-ratio:5/4;           /* matches the 2x2 grid video, so it is never cropped */
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    overflow:hidden;
+    color:#fff;
+    background:#3a3f47;
+    padding:92px 0 44px;
+  }
+  .hero-video{
+    position:absolute;inset:0;z-index:0;
+    width:100%;height:100%;object-fit:cover;
+    background:#3a3f47;
+  }
+  .hero-overlay{
+    position:absolute;inset:0;z-index:1;
+    background:linear-gradient(180deg,rgba(12,17,28,.42) 0%,rgba(12,17,28,.48) 55%,rgba(12,17,28,.6) 100%);
+  }
+  header.hero .wrap{position:relative;z-index:2;}
+  .hero-main{max-width:none;margin-top:-6vh;}
+
+  .hero-title{
+    font-size:8.5rem;
+    line-height:1;
+    font-weight:800;
+    letter-spacing:0.04em;
+    margin:0 auto 18px;
+    color:#fff;
+    text-shadow:0 2px 22px rgba(0,0,0,.45);
+  }
+  .hero-subtitle{
+    font-size:2.3rem;
+    line-height:1.2;
+    font-weight:400;
+    letter-spacing:-0.01em;
+    margin:0 auto 14px;
+    max-width:none;
+    white-space:nowrap;
+    color:rgba(255,255,255,.97);
+    text-shadow:0 2px 14px rgba(0,0,0,.4);
+  }
+  .hero-venue{
+    font-size:var(--fs-lead);
+    color:rgba(255,255,255,.85);
+    margin:18px 0 0;
+    text-shadow:0 2px 10px rgba(0,0,0,.4);
+  }
+  @media(max-width:900px){
+    .hero-subtitle{white-space:normal;}
+  }
+  @media(max-width:680px){
+    header.hero{padding:56px 0 28px;}
+    .hero-main{margin-top:0;}
+    .hero-title{font-size:3.2rem;margin-bottom:10px;}
+    .hero-subtitle{font-size:1.15rem;padding:0 8px;}
+    .scroll-cue{display:none;}
+    .hero-speed{right:10px;bottom:10px;}
+  }
+
+  /* Top nav — transparent over hero, solid after scrolling */
+  nav.topnav{
+    position:fixed;top:0;left:0;right:0;z-index:10;
+    display:flex;justify-content:center;gap:34px;
+    padding:18px 24px;
+    transition:background .2s ease,box-shadow .2s ease,padding .2s ease;
+  }
+  nav.topnav a{
+    color:rgba(255,255,255,.92);font-size:var(--fs-lead);font-weight:600;letter-spacing:.01em;
+    text-shadow:0 1px 8px rgba(0,0,0,.35);
+  }
+  nav.topnav a:hover{color:#fff;text-decoration:none;}
+  nav.topnav.solid{background:rgba(255,255,255,.96);box-shadow:0 1px 0 var(--line);padding:12px 24px;}
+  nav.topnav.solid a{color:var(--ink);text-shadow:none;}
+  nav.topnav.solid a:hover{color:var(--accent);}
+  nav.topnav a{white-space:nowrap;}
+  @media(max-width:560px){
+    nav.topnav{gap:12px;padding:12px 10px;}
+    nav.topnav.solid{padding:10px 10px;}
+    nav.topnav a{font-size:.78rem;}
+  }
+  section{scroll-margin-top:52px;}
+
+  .hero-speed{
+    position:absolute;right:18px;bottom:18px;z-index:2;
+    background:rgba(0,0,0,.55);color:#fff;font-size:var(--fs-small);font-weight:700;
+    padding:2px 8px;border-radius:5px;
+  }
+
+  /* scroll cue */
+  .scroll-cue{
+    position:absolute;left:50%;bottom:26px;transform:translateX(-50%);z-index:2;
+    color:rgba(255,255,255,.8);animation:bob 1.8s ease-in-out infinite;
+  }
+  @keyframes bob{0%,100%{transform:translate(-50%,0);}50%{transform:translate(-50%,7px);}}
+
+  /* Sections */
+  section{padding:56px 0;border-bottom:1px solid var(--line);}
+  section:last-of-type{border-bottom:none;}
+  h2{
+    font-size:var(--fs-h2);font-weight:730;text-align:center;
+    margin:0 0 10px;letter-spacing:-0.015em;
+  }
+  .section-sub{text-align:center;margin:0 auto 32px;}
+  h3{font-size:var(--fs-h3);font-weight:680;margin:34px 0 6px;}
+
+  p.body{margin:0 auto;max-width:780px;}
+  .abstract p{text-align:justify;}
+
+  figure{margin:0;}
+  .figimg{width:100%;height:auto;border-radius:var(--radius);border:1px solid var(--line);display:block;background:#fff;}
+  figcaption,.caption{margin:14px auto 0;text-align:left;}
+
+  .teaser{margin:6px auto 0;}
+
+  /* Video blocks */
+  video.clip{
+    width:100%;height:auto;display:block;
+    border-radius:var(--radius);border:1px solid var(--line);background:#000;
+  }
+  .vcard{margin-top:10px;}
+
+  /* Video placeholder — replace each .vph with
+     <video class="clip" src="video/xxx.mp4" autoplay muted loop playsinline></video> */
+  .vph{
+    width:100%;aspect-ratio:16/9;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+    border-radius:var(--radius);border:1px dashed #c9ced6;
+    background:repeating-linear-gradient(135deg,#f5f6f8 0 14px,#eef0f3 14px 28px);
+    color:#8a93a1;font-size:var(--fs-ui);text-align:center;padding:12px;
+  }
+  .vph svg{opacity:.7;}
+  .vph code{font-size:var(--fs-code);color:#9aa2ae;}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);align-items:start;}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;align-items:stretch;}
+  .grid2.side{align-items:center;}
+  .grid2.side .keypts{margin:0;}
+  @media(max-width:760px){.grid2,.grid3{grid-template-columns:1fr;}}
+
+  .pill{
+    display:inline-block;font-size:var(--fs-ui);font-weight:650;
+    padding:3px 11px;border-radius:6px;margin-bottom:10px;
+  }
+  .pill.ours{background:#e9f6ec;color:#1f7a3d;}
+  .pill.base{background:#fdecec;color:#b4322f;}
+  .pill.alt{background:#eaf1fb;color:#1f5fbf;}
+  .vwrap{position:relative;}
+  .vwrap .speed{
+    position:absolute;top:10px;right:10px;z-index:1;
+    background:rgba(0,0,0,.6);color:#fff;font-size:var(--fs-small);font-weight:700;
+    padding:2px 8px;border-radius:5px;letter-spacing:.02em;pointer-events:none;
+  }
+  .vlabel{margin:8px 0 0;font-size:var(--fs-ui);color:var(--muted);text-align:center;}
+  .grid2 > figure{min-width:0;}
+
+  .keypts{max-width:780px;margin:18px auto 0;padding-left:1.15em;}
+  .keypts li{margin:9px 0;}
+
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px 18px 16px;
+  }
+  .card h4{margin:0 0 6px;font-size:var(--fs-lead);font-weight:700;}
+  .card p{margin:0;font-size:var(--fs-text);color:var(--muted);line-height:1.55;}
+
+  .eq{
+    text-align:center;font-family:"Times New Roman",Times,serif;font-style:italic;font-size:1.15rem;
+    margin:18px auto;color:var(--ink);
+  }
+
+  footer{padding:40px 0 64px;text-align:center;color:var(--muted);font-size:var(--fs-ui);}
+  @media(max-width:680px){ .abstract p{text-align:left;} }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="#abstract">Abstract</a>
+  <a href="#interface">Data Collection</a>
+  <a href="#policy">Policy</a>
+  <a href="#controller">Controller</a>
+  <a href="#sweep">Evaluation</a>
+</nav>
+
+<header class="hero">
+    <video class="hero-video" src="video/web/hero.mp4" autoplay muted loop playsinline preload="auto"></video>
+  <div class="hero-overlay"></div>
+  <span class="hero-speed">4&times;</span>
+
+  <div class="wrap hero-main">
+    <h1 class="hero-title">PanTact</h1>
+    <p class="hero-subtitle">Teaching Whole-Body Dexterity with a Wearable Contact Interface</p>
+  </div>
+
+  <a class="scroll-cue" href="#teaser" aria-label="Scroll to content">
+    <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+  </a>
+</header>
+
+<!-- Teaser -->
+<section id="teaser" style="padding-top:42px;">
+  <div class="wrap">
+    <figure class="teaser">
+      <img class="figimg" src="img/teaser.jpg" alt="PanTact system overview">
+      <figcaption><b>PanTact</b> gives a humanoid whole-body dexterity, learned from robot-free human demonstrations.
+      (a) The data collection interface captures whole-body contact alongside vision and motion. (b) Contact is the
+      interface for human-to-robot transfer: measured on the demonstrator, predicted as contact goals by the policy, and
+      tracked by a contact-aware whole-body controller. (c) PanTact enables diverse whole-body dexterous skills on a humanoid.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- Abstract -->
+<section id="abstract" class="abstract">
+  <div class="wrap">
+    <h2>Abstract</h2>
+    <p class="body">Humanoid robots have many degrees of freedom and contact surfaces, yet most loco-manipulation research
+    restricts manipulation to the hands and avoids other body contacts with the environment. To extend manipulation beyond
+    the hands, we present <b>PanTact</b>, a system that enables humanoid <b>whole-body dexterity</b>, the capability to
+    manipulate with any suitable body surface, and learned directly from <b>robot-free human demonstrations</b>. Our key idea
+    is that <b>contact is manipulation-centric information</b> that should be tracked and transferred across embodiments.
+    Specifically, PanTact captures, learns, and executes whole-body contact via: 1) a wearable, robot-free data collection
+    interface that augments egocentric vision and bimanual UMI grippers with whole-body modular contact patches to record
+    body contact location and intensity; 2) a visuomotor policy that mitigates the egocentric observation gap and predicts
+    whole-body contact goals; and 3) contact-aware whole-body control formulations that realize active contact goals using
+    suitable robot surfaces under robot-specific constraints. Deployed on a Unitree G1 humanoid without additional body
+    contact sensors, PanTact demonstrates coordinated prehensile and non-prehensile whole-body manipulation involving body
+    support, pushing, sweeping, and load-sharing.</p>
+  </div>
+</section>
+
+<!-- Data collection interface -->
+<section id="interface">
+  <div class="wrap">
+    <h2>Wearable Whole-Body Contact Interface</h2>
+    <p class="section-sub">Egocentric-augmented bimanual UMI grippers plus modular contact patches on the forearms and
+    knees record <b>where, when, and how hard</b> the demonstrator's body contacts the environment.</p>
+
+    <figure class="vcard">
+      <video class="clip lazy" src="video/web/data_collection.mp4" muted loop playsinline preload="none"></video>
+      <p class="caption"><b>Robot-free demonstration.</b> Head and wrist camera views recorded alongside live readings from
+      the forearm and knee contact patches, captured in sync while the demonstrator performs the task.</p>
+    </figure>
+
+    <div class="grid2 side" style="margin-top:34px;">
+    <figure>
+      <img class="figimg" src="img/hardware.jpg" alt="PanTact modular contact patch">
+      <figcaption><b>Modular contact patch.</b> Sensor, connector, and strap modules snap together into patches of arbitrary
+      shape and extent. We showcase arm and knee patches.</figcaption>
+    </figure>
+
+    <ul class="keypts">
+      <li style="margin-top:0;"><b>Tile-like modules.</b> Each 44&times;44&nbsp;mm module carries a single force-sensitive resistor (FSR). A
+      custom PCB streams up to 16 FSR channels at 1&nbsp;kHz; modules are daisy-chained over an RS-485 bus.</li>
+      <li><b>Magnetic tiling.</b> Press-fit connectors reinforced by magnets let patches of any shape be assembled by snapping
+      modules together. Strap connectors secure the patch to the body, and tracker connectors mount an HTC Vive tracker to
+      track the patch pose.</li>
+      <li><b>Contact detection &amp; localization.</b> Contact is binarized against a per-channel adaptive baseline to handle
+      FSR drift, and each sensor's 3D position follows from a rigid transform of its patch tracker.</li>
+      <li><b>Vision &amp; pose.</b> A head-mounted stereo camera and two fisheye wrist cameras at 60&nbsp;fps, Vive
+      trackers on the head and wrists, and gripper widths, all logged on a shared clock.</li>
+    </ul>
+    </div>
+  </div>
+</section>
+
+<!-- Policy -->
+<section id="policy">
+  <div class="wrap">
+    <h2>Whole-Body Contact Policy</h2>
+    <p class="section-sub">A diffusion policy maps <b>embodiment-agnostic observations</b> to EEF trajectories and
+    <b>whole-body contact goals</b>.</p>
+    <div class="grid2 side">
+    <figure>
+      <img class="figimg" src="img/policy.jpg" alt="PanTact policy architecture">
+      <figcaption>The policy takes in a 3D egocentric observation with the demonstrator's body masked out, wrist observations,
+      and proprioception, and predicts EEF trajectories and contact goal trajectories.</figcaption>
+    </figure>
+    <ul class="keypts">
+      <li style="margin-top:0;"><b>Geometric body masking.</b> Each gripper frame and contact patch defines a body-facing half-space; their
+      intersection approximates the demonstrator's body, which is masked in the attention layers of the egocentric
+      pointmap encoder. No appearance model of either embodiment is needed, and it scales to any number of patches.</li>
+      <li><b>Contact-aware action space.</b> Each action step contains a head look-at point, EEF poses and gripper widths,
+      and per-sensor contact goals, each a binary contact state and a 3D contact position.</li>
+      <li><b>Active vs. inactive goals.</b> Only active goals request the robot to make contact; inactive goals do not
+      force the robot to reproduce the human's free-space body motion, leaving the controller free to choose a
+      robot-suited configuration.</li>
+    </ul>
+    </div>
+  </div>
+</section>
+
+<!-- Controller -->
+<section id="controller">
+  <div class="wrap">
+    <h2>Contact-Aware Whole-Body Control</h2>
+    <p class="section-sub">The controller realizes active contact goals with <b>any suitable robot surface</b>, rather than
+    assigning each contact to a fixed link.</p>
+
+    <ul class="keypts" style="margin-top:0;">
+      <li><b>Any-surface contact objective.</b> The distance from a commanded contact to the robot is a soft-min over all
+      candidate bodies, so whichever surface can best reach the contact satisfies it:</li>
+    </ul>
+    <ul class="keypts" style="margin-top:0;">
+      <li><b>Virtual contact targets.</b> Active contact targets are offset into the object along the pressing direction,
+      so the residual tracking error produces a pressing force at contact.</li>
+    </ul>
+
+    <h3 style="text-align:center;margin-top:36px;">Three Controller Formulations</h3>
+    <div class="grid3" style="margin-top:16px;">
+      <div class="card">
+        <h4>Contact-Aware IK</h4>
+        <p>Differential IK QP jointly optimizing EEF and contact tasks. Precise and interpretable, requires no training
+        data or simulation; limited to upper-body tasks.</p>
+      </div>
+      <div class="card">
+        <h4>WBIK + Dense Tracker</h4>
+        <p>Contact-aware whole-body IK with foot and balance constraints, executed by a learned dense motion tracker.
+        Lets contacts be reached by the lower body and adds locomotion.</p>
+      </div>
+      <div class="card">
+        <h4>Sparse Contact Tracker</h4>
+        <p>RL goal-conditioned controller that directly tracks sparse EEF and contact goals, trained in simulation with
+        <b>hindsight contact labeling</b>.</p>
+      </div>
+    </div>
+
+    <figure style="max-width:760px;margin:34px auto 0;">
+      <img class="figimg" src="img/controller_comparison.jpg" alt="Controller comparison">
+      <figcaption><b>Controller comparison.</b> Replaying the same demonstrations and synthetic contact commands in
+      simulation, adding contact goals reduces contact surface distance for all three formulations.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- Task 1: Sweep-and-stow -->
+<section id="sweep">
+  <div class="wrap">
+    <h2>Sweep-and-Stow</h2>
+    <p class="section-sub">The robot sweeps tall objects from a counter into an open bin in a single stroke, then uses a
+    lower-body surface to push the cabinet closed. <b>Ours (WBIK + Dense Tracker) reaches 90.63% end-to-end success;
+    Humanoid UMI++ 0%.</b></p>
+
+    <span class="pill ours">Ours &middot; WBIK + Dense Tracker</span>
+    <figure>
+      <video class="clip lazy" src="video/web/sweep_ours_1_ego.mp4" muted loop playsinline preload="none"></video>
+        <p class="vlabel">Third-person view (left) and synchronized robot egocentric view (right)</p>
+    </figure>
+    <div class="grid2" style="margin-top:26px;">
+      <figure><video class="clip lazy" src="video/web/sweep_ours_2.mp4" muted loop playsinline preload="none"></video>
+        <p class="vlabel">Seen object, different layout</p></figure>
+      <figure><video class="clip lazy" src="video/web/sweep_ours_unseen.mp4" muted loop playsinline preload="none"></video>
+        <p class="vlabel">Unseen object</p></figure>
+      <figure><video class="clip lazy" src="video/web/sweep_ours_two.mp4" muted loop playsinline preload="none"></video>
+        <p class="vlabel">Two seen objects</p></figure>
+      <figure><video class="clip lazy" src="video/web/sweep_ours_two_unseen.mp4" muted loop playsinline preload="none"></video>
+        <p class="vlabel">Two unseen objects</p></figure>
+    </div>
+
+    <div style="margin-top:30px;">
+      <span class="pill base">Baseline &middot; Humanoid UMI++</span>
+      <div class="grid2">
+        <figure><video class="clip lazy" src="video/web/sweep_baseline.mp4" muted loop playsinline preload="none"></video>
+        <p class="vlabel">One object</p></figure>
+        <figure><video class="clip lazy" src="video/web/sweep_baseline_two.mp4" muted loop playsinline preload="none"></video>
+        <p class="vlabel">Two objects</p></figure>
+      </div>
+      <figcaption><b>Pose-based baseline.</b> Without explicit arm-contact objectives, the gripper passes above objects or
+      knocks them outside the bin, and the robot fails to advance a leg to close the cabinet.</figcaption>
+    </div>
+
+    <figure style="margin-top:30px;">
+      <img class="figimg" src="img/sweep_stow.jpg" alt="Sweep-and-stow results">
+      <figcaption>(a) Autonomous rollout demonstrating arm sweeping and lower-body pushing, locomotion, and balance at the
+      same time. (b) Test configurations with seen and unseen object combinations and varied cabinet openings.
+      (c) Humanoid UMI++ failures: the gripper passes above an object or knocks it outside the bin, and the robot fails to
+      advance a leg as its arms approach joint limits. (d) Stage-wise and end-to-end success rates.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- Task 2: Ulnar grasp -->
+<section id="ulnar">
+  <div class="wrap">
+    <h2>Upper-Body Ulnar Grasp</h2>
+    <p class="section-sub">An upper-body analogue of the hand's ulnar grasp: the robot grasps a small object with the
+    gripper, then embraces a bulky object with its arms and moves both simultaneously.
+    <b>Ours (Contact IK) reaches 85% success; Humanoid UMI 0%.</b></p>
+
+    <span class="pill ours">Ours &middot; Contact-Aware IK</span>
+    <div class="grid2">
+      <figure>
+        <video class="clip lazy" src="video/web/ulnar_ours_1.mp4" muted loop playsinline preload="none"></video>
+        <p class="vlabel">Rollout 1</p>
+      </figure>
+      <figure>
+        <video class="clip lazy" src="video/web/ulnar_ours_2.mp4" muted loop playsinline preload="none"></video>
+        <p class="vlabel">Rollout 2</p>
+      </figure>
+    </div>
+
+    <figure class="vcard" style="margin:30px auto 0;max-width:640px;">
+      <span class="pill base">Baseline &middot; Humanoid UMI</span>
+      <video class="clip lazy" src="video/web/ulnar_baseline.mp4" muted loop playsinline preload="none"></video>
+      <figcaption><b>EEF-only baseline.</b> Without arm-contact objectives, the arms never press on the bulky object, so it
+      cannot be supported and moved.</figcaption>
+    </figure>
+
+    <figure style="margin-top:30px;">
+      <img class="figimg" src="img/ulnar_grasp.jpg" alt="Upper-body ulnar grasp results">
+      <figcaption>(a) Autonomous rollout with contact-aware IK, supporting a bulky object with the arms while grasping a
+      small object with the gripper. (b) Test configurations with varied object placements and initial robot postures.
+      (c) Humanoid UMI's typical failure: insufficient arm contact to support the bulky object. (d) Success rates.
+      (e) Real-world tracking plots: smaller EEF and active-contact errors with contact-aware IK than with the sparse tracker.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- Task 3: Dual-load transport -->
+<section id="dualload">
+  <div class="wrap">
+    <h2>Dual-Load Transport</h2>
+    <p class="section-sub">The robot carries a box in both arms, walks towards a larger box on the floor, and pushes it
+    with its shins and knees. <b>Ours (WBIK + Dense Tracker) reaches 90% success; Humanoid UMI++ 40%.</b></p>
+
+    <span class="pill ours">Ours &middot; WBIK + Dense Tracker</span>
+    <div class="grid2">
+      <figure><video class="clip lazy" src="video/web/dualload_ours_1.mp4" muted loop playsinline preload="none"></video>
+        <p class="vlabel">Rollout 1</p></figure>
+      <figure><video class="clip lazy" src="video/web/dualload_ours_2.mp4" muted loop playsinline preload="none"></video>
+        <p class="vlabel">Rollout 2 &middot; box on right</p></figure>
+    </div>
+
+    <div class="grid2" style="margin-top:30px;">
+      <figure>
+        <span class="pill alt">Ours &middot; Sparse Tracker</span>
+        <video class="clip lazy" src="video/web/dualload_sparse.mp4" muted loop playsinline preload="none"></video>
+      </figure>
+      <figure>
+        <span class="pill base">Baseline &middot; Humanoid UMI++</span>
+        <video class="clip lazy" src="video/web/dualload_baseline.mp4" muted loop playsinline preload="none"></video>
+      </figure>
+    </div>
+
+    <figure style="margin-top:30px;">
+      <img class="figimg" src="img/dual_load.jpg" alt="Dual-load transport results">
+      <figcaption>(a) Rollout demonstrating arm load-sharing while walking and pushing with the lower body. (b) Test
+      configurations with varied box placements and initial robot postures. (c) Humanoid UMI++ drops the carried box due
+      to insufficient contact support. (d) Success rates. (e) Real-world tracking: Humanoid UMI++ continuously tracks knee
+      poses with large error, while ours tracks leg contact goals accurately during active contact phases.</figcaption>
+    </figure>
+  </div>
+</section>
+
+
+<script>
+// Solid nav background once past the hero
+(function(){
+  var nav = document.querySelector('.topnav'), hero = document.querySelector('.hero');
+  var update = function(){ nav.classList.toggle('solid', window.scrollY > hero.offsetHeight - 60); };
+  window.addEventListener('scroll', update, {passive:true});
+  update();
+})();
+
+// Play videos only while visible to keep the page light
+(function(){
+  var SPEED = 2;
+  var vids = document.querySelectorAll('video.lazy');
+  vids.forEach(function(v){
+    v.defaultPlaybackRate = SPEED; v.playbackRate = SPEED;
+    v.addEventListener('loadedmetadata', function(){ v.playbackRate = SPEED; });
+    var w = document.createElement('div'); w.className = 'vwrap';
+    v.parentNode.insertBefore(w, v); w.appendChild(v);
+    var b = document.createElement('span'); b.className = 'speed'; b.textContent = SPEED + '\u00d7';
+    w.appendChild(b);
+  });
+  var play = function(v){ v.preload = 'auto'; v.playbackRate = SPEED; var p = v.play(); if(p && p.catch) p.catch(function(){}); };
+  if(!('IntersectionObserver' in window)){ vids.forEach(play); return; }
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){ if(e.isIntersecting) play(e.target); else e.target.pause(); });
+  }, {rootMargin:'200px 0px'});
+  vids.forEach(function(v){ io.observe(v); });
+})();
+
+// Force-play the muted hero video; hide it if the clip is missing
+(function(){
+  var v = document.querySelector('.hero-video');
+  if(!v) return;
+  v.muted = true;
+  v.setAttribute('muted','');
+  if(v.error) v.style.display = 'none';
+  v.addEventListener('error', function(){ v.style.display = 'none'; });
+  var tryPlay = function(){ var p = v.play(); if(p && p.catch) p.catch(function(){}); };
+  tryPlay();
+  v.addEventListener('canplay', tryPlay, {once:true});
+  document.addEventListener('visibilitychange', function(){ if(!document.hidden) tryPlay(); });
+})();
+</script>
+
+</body>
+</html>

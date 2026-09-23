@@ -1,0 +1,4 @@
+.DS_Store
+# raw footage (contains GPS/device metadata) — only publish compressed clips
+video/*
+!video/web/
